@@ -1,0 +1,27 @@
+{
+  "name": "node-gsettings",
+  "description": "Node binding to gsettings dconf tool",
+  "version": "0.1.0",
+  "author": "Leopold Burdyl",
+  "contributors": [
+    {
+      "name": "Steve Githens"
+    }
+  ],
+  "scripts": {
+    "test": "node test.js"
+  },
+  "bugs": "",
+  "homepage": "",
+  "dependencies": {},
+  "licenses": [
+     {
+       "type": "BSD-3-Clause",
+       "url": "http://www.opensource.org/licenses/BSD-3-Clause"
+     }
+  ],
+  "keywords": ["dconf", "gsettings", "settings", "config", "gnome", "desktop"],
+  "repository": "",
+  "main": "index.js",
+  "engines": { "node" : ">=0.1.9" }
+}
