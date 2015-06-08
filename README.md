@@ -7,6 +7,11 @@ Nodejs binding to [gsettings](https://developer.gnome.org/gio/stable/GSettings.h
 This is a fork from [GPII/linux gsettingsBridge](https://github.com/GPII/linux/tree/master/gpii/node_modules/gsettingsBridge) based on commit `b28e99212e4c7cc803f210c066e0124d72c8b72d`.
 
 
+## Install
+```sh
+npm install git://github.com/vilnius-leopold/node-gsettings.git
+```
+
 ## API
 ### Features
 Currently the API is very limited to very basic gsettings functionality. It is intended for updating and reading application settings. This is not an API for settings up or configuring dconf settings.

@@ -1,13 +1,15 @@
 all:
 
 clean:
-	rm -rf build/
+	node-gyp clean
 	rm -f npm-debug.log
 
 build: clean nodegsettings.cc
-	node-gyp configure build
+	node-gyp rebuild # clean configure build
 
 test:
-	npm test
+	cd tests; npm test
 
 build-and-test: build test
+
+

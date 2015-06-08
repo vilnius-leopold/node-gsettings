@@ -1,5 +1,5 @@
 var assert    = require('assert'),
-    GSettings = require("./index.js");
+    GSettings = require("./../index.js");
 
 var schemaId = 'org.gnome.desktop.interface',
     settings = new GSettings( schemaId );
