@@ -16,7 +16,7 @@
      }
   ],
   "keywords": ["dconf", "gsettings", "settings", "config", "gnome", "desktop"],
-  "repository": "",
+  "repository": "https://github.com/vilnius-leopold/node-gsettings.git",
   "main": "index.js",
   "engines": { "node" : ">=0.1.9" }
 }
