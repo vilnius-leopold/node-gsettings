@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "author": "Leopold Burdyl",
   "scripts": {
-    "test": "node test.js"
+    "test": "node tests/test.js"
   },
   "bugs": "https://github.com/vilnius-leopold/node-gsettings/issues",
   "homepage": "https://github.com/vilnius-leopold/node-gsettings",

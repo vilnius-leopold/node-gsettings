@@ -8,7 +8,7 @@ build: clean nodegsettings.cc
 	node-gyp rebuild # clean configure build
 
 test:
-	cd tests; npm test
+	npm test
 
 build-and-test: build test
 
