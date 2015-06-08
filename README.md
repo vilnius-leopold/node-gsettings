@@ -2,9 +2,7 @@ node-gsettings
 ==============
 Nodejs binding to [gsettings](https://developer.gnome.org/gio/stable/GSettings.html). Gsettings is a common way of storing application configurations on linux in a standardized, transparent manner. Gsettings uses [dconf](https://wiki.gnome.org/action/show/Projects/dconf) for its backend.
 
-
-## It's a fork
-This is a fork from [GPII/linux gsettingsBridge](https://github.com/GPII/linux/tree/master/gpii/node_modules/gsettingsBridge) based on commit `b28e99212e4c7cc803f210c066e0124d72c8b72d`.
+This project is a fork of [GPII/linux gsettingsBridge](https://github.com/GPII/linux/tree/master/gpii/node_modules/gsettingsBridge).
 
 
 ## Install
