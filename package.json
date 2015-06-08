@@ -3,16 +3,11 @@
   "description": "Node binding to gsettings dconf tool",
   "version": "0.1.0",
   "author": "Leopold Burdyl",
-  "contributors": [
-    {
-      "name": "Steve Githens"
-    }
-  ],
   "scripts": {
     "test": "node test.js"
   },
-  "bugs": "",
-  "homepage": "",
+  "bugs": "https://github.com/vilnius-leopold/node-gsettings/issues",
+  "homepage": "https://github.com/vilnius-leopold/node-gsettings",
   "dependencies": {},
   "licenses": [
      {
