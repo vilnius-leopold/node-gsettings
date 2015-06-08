@@ -12,6 +12,15 @@
  *
  * You may obtain a copy of the License at
  * https://github.com/GPII/universal/blob/master/LICENSE.txt
+ *
+ */
+
+/*
+ * For changes done after initial fork from
+ * https://github.com/GPII/linux
+ * based on commit b28e99212e4c7cc803f210c066e0124d72c8b72d.
+ *
+ * Copyright 2015 Leopold Burdyl
  */
 
 // #include <stdio.h>
