@@ -25,7 +25,7 @@ dconf has a very flexible [type system](https://developer.gnome.org/glib/stable/
 | `b`           | Boolean               | `true`, `false`             |  ✓   |   ✓   |
 | `s`           | String                | `"Some string"`           |  ✓   |   ✓   |
 | `i`, `u`, `d` | Number                | `-12`, `5`, `3.12`            |  ✓   |   ✓   |
-| `as`          | Array of Strings      | `[ 'one', 'two', 'three' ]` |  ✓   |       |
+| `as`          | Array of Strings      | `[ 'one', 'two', 'three' ]` |  ✓   |   ✓   |
 | `a(ss)`       | Array of String Pairs | `[ ['one', 'two'], ['three', 'four'] ]` |  ✓   |       |
 
 

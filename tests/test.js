@@ -22,10 +22,20 @@ var settingsData = new GSettings('org.gnome.desktop.input-sources').getAll();
 var settings2 = new GSettings('org.gnome.desktop.search-providers');
 
 settings2.getAll();
-var sortOrder = settings2.get('sort-order');
 
-console.log('sort-order', sortOrder);
-settings2.set('sort-order', sortOrder);
+var originalSortOrder = settings2.get('sort-order');
+console.log('ORIGINAL sort-order', originalSortOrder);
+
+settings2.set('sort-order', originalSortOrder.reverse());
+var reversedSortOrder = settings2.get('sort-order');
+console.log('REVERSE sort-order:', reversedSortOrder);
+assert(originalSortOrder.reverse(), reversedSortOrder);
+
+settings2.set('sort-order', reversedSortOrder.reverse());
+var restoredSortOrder = settings2.get('sort-order');
+console.log('RESTORED sort-order:', restoredSortOrder);
+assert(originalSortOrder, restoredSortOrder);
+
 // var settingsData = new GSettings('org.gnome.Totem').getAll();
 
 
