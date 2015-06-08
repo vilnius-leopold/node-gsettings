@@ -28,7 +28,7 @@ dconf has a very flexible [type system](https://developer.gnome.org/glib/stable/
 ```javascript
 var GSettings = require("node-gsettings");
 
-var schemaId = 'org.gnome.desktop.interface',
+var schemaId = 'org.gnome.desktop.interface';
 
 // create a new settings object
 var settings = new GSettings( schemaId );
@@ -43,7 +43,7 @@ var settingsData = settings.getAll();
 var settingsJSON = settings.serialize();
 
 // get list of keys
-var keyList = settings.getKeyList()
+var keyList = settings.getKeyList();
 
 // setting a single key
 settings.set('clock-format', '12h');
