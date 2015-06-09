@@ -7,7 +7,7 @@ This project is a fork of [GPII/linux gsettingsBridge](https://github.com/GPII/l
 
 ## Install
 ```sh
-npm install git://github.com/vilnius-leopold/node-gsettings.git
+npm install node-gsettings
 ```
 
 ## API
