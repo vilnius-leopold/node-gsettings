@@ -43,7 +43,7 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 	gchar ** keys;
 	gint i;
 	gint size = 0;
-	args[0]->ToString()->WriteAscii(schema);
+	args[0]->ToString()->WriteUtf8(schema);
 	settings = g_settings_new(schema);
 	keys = g_settings_list_keys(settings);
 	for (i = 0; keys[i]; i++) {
@@ -63,9 +63,9 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	GSettings *settings;
 	char schema[1024];
 	char key[1024];
-	args[0]->ToString()->WriteAscii(schema);
+	args[0]->ToString()->WriteUtf8(schema);
 	settings = g_settings_new(schema);
-	args[1]->ToString()->WriteAscii(key);
+	args[1]->ToString()->WriteUtf8(key);
 	GVariant* variant;
 	const GVariantType* type;
 
@@ -140,9 +140,9 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	char key[1024];
 	bool status = false;
 
-	args[0]->ToString()->WriteAscii(schema);
+	args[0]->ToString()->WriteUtf8(schema);
 	settings = g_settings_new(schema);
-	args[1]->ToString()->WriteAscii(key);
+	args[1]->ToString()->WriteUtf8(key);
 	if (args[2]->IsBoolean()) {
 		status = g_settings_set_boolean(settings,key,args[2]->BooleanValue());
 	}
@@ -167,7 +167,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 		char val[1024];
 		variant = g_settings_get_value(settings,key);
 		type = g_variant_get_type(variant);
-		args[2]->ToString()->WriteAscii(val);
+		args[2]->ToString()->WriteUtf8(val);
 		status = g_settings_set_string(settings,key,val);
 	}
 	else if (args[2]->IsArray()) {
