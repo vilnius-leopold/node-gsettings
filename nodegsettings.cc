@@ -39,11 +39,16 @@ const GVariantType* X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY = g_variant_type_new("a(
 Handle<Value> get_gsetting_keys(const Arguments& args) {
 	HandleScope scope;
 	GSettings *settings;
-	char schema[1024];
 	gchar ** keys;
 	gint i;
 	gint size = 0;
-	args[0]->ToString()->WriteUtf8(schema);
+
+	// write schema string to variable
+	Local<String> schema_string_obj = args[0]->ToString();
+	int schema_string_length = schema_string_obj->Length();
+	char *schema = (char*) g_malloc(schema_string_length + 1);
+	schema_string_obj->WriteUtf8(schema);
+
 	settings = g_settings_new(schema);
 	keys = g_settings_list_keys(settings);
 	for (i = 0; keys[i]; i++) {
@@ -61,11 +66,21 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 Handle<Value> get_gsetting(const Arguments& args) {
 	HandleScope scope;
 	GSettings *settings;
-	char schema[1024];
-	char key[1024];
-	args[0]->ToString()->WriteUtf8(schema);
+
+	// write schema string to variable
+	Local<String> schema_string_obj = args[0]->ToString();
+	int schema_string_length = schema_string_obj->Length();
+	char *schema = (char*) g_malloc(schema_string_length + 1);
+	schema_string_obj->WriteUtf8(schema);
+
 	settings = g_settings_new(schema);
-	args[1]->ToString()->WriteUtf8(key);
+
+	// write schema string to variable
+	Local<String> key_string_obj = args[1]->ToString();
+	int key_string_length = key_string_obj->Length();
+	char *key = (char*) g_malloc(key_string_length + 1);
+	key_string_obj->WriteUtf8(key);
+
 	GVariant* variant;
 	const GVariantType* type;
 
@@ -136,13 +151,24 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	GSettings *settings;
 	GVariant* variant;
 	const GVariantType* type;
-	char schema[1024];
-	char key[1024];
 	bool status = false;
 
-	args[0]->ToString()->WriteUtf8(schema);
+	// write schema string to variable
+	Local<String> schema_string_obj = args[0]->ToString();
+	int schema_string_length = schema_string_obj->Length();
+	char *schema = (char*) g_malloc(schema_string_length + 1);
+	schema_string_obj->WriteUtf8(schema);
+
 	settings = g_settings_new(schema);
-	args[1]->ToString()->WriteUtf8(key);
+
+	// write schema string to variable
+	Local<String> key_string_obj = args[1]->ToString();
+	int key_string_length = key_string_obj->Length();
+	char *key = (char*) g_malloc(key_string_length + 1);
+	key_string_obj->WriteUtf8(key);
+
+	// args[1]->ToString()->WriteUtf8(key);
+
 	if (args[2]->IsBoolean()) {
 		status = g_settings_set_boolean(settings,key,args[2]->BooleanValue());
 	}
@@ -166,11 +192,11 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	else if (args[2]->IsString()) {
 		variant = g_settings_get_value(settings,key);
 		type = g_variant_get_type(variant);
+
+		// write string value to variable
 		Local<String> string_obj = args[2]->ToString();
-
 		int string_length = string_obj->Length();
-		char val[string_length+1];
-
+		char *val = (char *) g_malloc(string_length+1);
 		string_obj->WriteUtf8(val);
 
 		status = g_settings_set_string(settings,key,val);
@@ -199,11 +225,10 @@ Handle<Value> set_gsetting(const Arguments& args) {
 					Local<Value> element = obj->Get(i);
 
 					if ( element->IsString() ) {
+						// write string value to variable
 						Local<String> string_obj = element->ToString();
 						const int string_length = string_obj->Length();
-
-						gchar val[string_length+1];
-
+						gchar *val = (gchar *) g_malloc(string_length+1);
 						string_obj->WriteUtf8(val);
 
 						GVariant *string_variant = g_variant_new_string ((const gchar *) val);
