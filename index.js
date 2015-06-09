@@ -1,8 +1,5 @@
 var gSettingsBinding = require('./build/Release/nodegsettings.node');
 
-console.log('LOAD DONE');
-
-
 // Constructor
 function GSettings( schemaId ) {
 	this.schemaId = schemaId;
@@ -24,13 +21,9 @@ GSettings.prototype.getAll = function() {
 	    value,
 	    key;
 
-	console.log('keyList', keyList);
-
 	for ( var i = 0; i < keyCount; i++ ) {
 		key   = keyList[i];
 		value = this.get( key );
-		console.log('key: value ', key, value);
-		// console.log('value: ', value);
 
 		settings[key] = value;
 	}

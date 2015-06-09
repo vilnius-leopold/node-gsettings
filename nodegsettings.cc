@@ -32,8 +32,6 @@
 using namespace v8;
 
 // in globals
-// static Persistent<String> data_symbol;
-// static Persistent<String> tag_symbol;
 const GVariantType* X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY = g_variant_type_new("a(ss)");
 
 
@@ -157,6 +155,9 @@ Handle<Value> set_gsetting(const Arguments& args) {
 		else if (g_variant_type_equal(type,G_VARIANT_TYPE_INT32)) {
 			status = g_settings_set_int(settings,key,args[2]->ToInt32()->Value());
 		}
+		else if (g_variant_type_equal(type,G_VARIANT_TYPE_UINT32)) {
+			status = g_settings_set_uint(settings,key,args[2]->ToUint32()->Value());
+		}
 		else {
 			g_print("The type is %s\n", g_variant_type_peek_string(type));
 			ThrowException(Exception::Error(String::New("We haven't implemented this number type yet!")));
@@ -170,7 +171,6 @@ Handle<Value> set_gsetting(const Arguments& args) {
 		status = g_settings_set_string(settings,key,val);
 	}
 	else if (args[2]->IsArray()) {
-
 		variant = g_settings_get_value(settings,key);
 
 		type = g_variant_get_type(variant);
@@ -179,10 +179,6 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 		// get the array length
 		int length = obj->Get(String::New("length"))->ToObject()->Uint32Value();
-
-		// gchar array
-		GVariant *string_variant_array[length];
-		gchar *string_array[length];
 
 		if ( g_variant_type_equal(type, G_VARIANT_TYPE_STRING_ARRAY) ) {
 			// now that we know that gsetting requires an array of strings
@@ -238,8 +234,6 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 void init(Handle<Object> target) {
 	// in addon initialization function
-	// data_symbol = NODE_PSYMBOL("data");
-	// tag_symbol = NODE_PSYMBOL("tag");
 
 	target->Set(String::NewSymbol("set_gsetting"),
 	            FunctionTemplate::New(set_gsetting)->GetFunction());
