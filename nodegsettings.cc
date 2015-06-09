@@ -45,7 +45,7 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 
 	// write schema string to variable
 	Local<String> schema_string_obj = args[0]->ToString();
-	int schema_string_length = schema_string_obj->Length();
+	int schema_string_length = schema_string_obj->Utf8Length();
 	char *schema = (char*) g_malloc(schema_string_length + 1);
 	schema_string_obj->WriteUtf8(schema);
 
@@ -69,7 +69,7 @@ Handle<Value> get_gsetting(const Arguments& args) {
 
 	// write schema string to variable
 	Local<String> schema_string_obj = args[0]->ToString();
-	int schema_string_length = schema_string_obj->Length();
+	int schema_string_length = schema_string_obj->Utf8Length();
 	char *schema = (char*) g_malloc(schema_string_length + 1);
 	schema_string_obj->WriteUtf8(schema);
 
@@ -77,7 +77,7 @@ Handle<Value> get_gsetting(const Arguments& args) {
 
 	// write schema string to variable
 	Local<String> key_string_obj = args[1]->ToString();
-	int key_string_length = key_string_obj->Length();
+	int key_string_length = key_string_obj->Utf8Length();
 	char *key = (char*) g_malloc(key_string_length + 1);
 	key_string_obj->WriteUtf8(key);
 
@@ -155,7 +155,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 	// write schema string to variable
 	Local<String> schema_string_obj = args[0]->ToString();
-	int schema_string_length = schema_string_obj->Length();
+	int schema_string_length = schema_string_obj->Utf8Length();
 	char *schema = (char*) g_malloc(schema_string_length + 1);
 	schema_string_obj->WriteUtf8(schema);
 
@@ -163,7 +163,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 	// write schema string to variable
 	Local<String> key_string_obj = args[1]->ToString();
-	int key_string_length = key_string_obj->Length();
+	int key_string_length = key_string_obj->Utf8Length();
 	char *key = (char*) g_malloc(key_string_length + 1);
 	key_string_obj->WriteUtf8(key);
 
@@ -195,7 +195,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 		// write string value to variable
 		Local<String> string_obj = args[2]->ToString();
-		int string_length = string_obj->Length();
+		int string_length = string_obj->Utf8Length();
 		char *val = (char *) g_malloc(string_length+1);
 		string_obj->WriteUtf8(val);
 
@@ -227,7 +227,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 					if ( element->IsString() ) {
 						// write string value to variable
 						Local<String> string_obj = element->ToString();
-						const int string_length = string_obj->Length();
+						const int string_length = string_obj->Utf8Length();
 						gchar *val = (gchar *) g_malloc(string_length+1);
 						string_obj->WriteUtf8(val);
 
