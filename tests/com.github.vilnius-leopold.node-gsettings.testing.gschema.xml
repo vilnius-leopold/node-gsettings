@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+	<schema path="/com/github/vilnius-leopold/node-gsettings/testing/" id="com.github.vilnius-leopold.node-gsettings.testing" gettext-domain="node-gsettings-testing-schemas">
+		<key type="i" name="integer-setting">
+			<default>-15</default>
+		</key>
+		<key type="u" name="unsigned-integer-setting">
+			<default>15</default>
+		</key>
+		<key type="d" name="double-setting">
+			<default>5.0</default>
+		</key>
+		<key type="b" name="boolean-setting">
+			<default>false</default>
+		</key>
+		<key type="s" name="string-setting">
+			<default>"abcdefg"</default>
+		</key>
+		<key type="as" name="string-array-setting">
+			<default>["one", "two", "three"]</default>
+		</key>
+		<key type="a(ss)" name="string-tuple-array-setting">
+			<default>[("one", "two"), ("three", "four")]</default>
+		</key>
+	</schema>
+</schemalist>

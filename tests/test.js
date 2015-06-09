@@ -1,51 +1,136 @@
 var assert    = require('assert'),
     GSettings = require("./../index.js");
 
-// create object
-var schemaId = 'org.gnome.desktop.interface',
-    settings = new GSettings( schemaId );
+var testData = {
+	'com.github.vilnius-leopold.node-gsettings.testing': [
+		{
+			key: 'boolean-setting',
+			originalValue: false,
+			// skipTest: true,
+			testValues: [true],
+			failTestValues: ['string',null]
+		},{
+			key: 'unsigned-integer-setting',
+			originalValue: 15,
+			testValues: [9134534],
+			failTestValues: [null, -12]
+		},{
+			key: 'integer-setting',
+			originalValue: -15,
+			testValues: [2312,-3423],
+			failTestValues: [0.12]
+		},{
+			key: 'double-setting',
+			originalValue: 5.0,
+			testValues: [-12.346, 6.9999999999],
+			failTestValues: []
+		},{
+			key: 'string-setting',
+			originalValue: "abcdefg",
+			testValues: ["Try super long", "Try UTF8 strange charsöä PÜÖ,''ūė-čėą“"],
+			failTestValues: [null, 5]
+		},{
+			key: 'string-array-setting',
+			originalValue: ["one", "two", "three"],
+			testValues: [
+				["adfasd", "12dfs", "xyz"]
+			],
+			failTestValues: []
+		},{
+			key: 'string-tuple-array-setting',
+			originalValue: [["one", "two"], ["three", "four"]],
+			testValues: [
+				[["x", "y"], ["abc", "efg"]]
+			],
+			skipTest: true,
+			failTestValues: [
+				[["x"], ["abc", "efg"]],
+				[[1,2], ["abc", "efg"]]
+			]
+		},
+	]
+};
 
-// schema id test
-assert( settings.schemaId, schemaId);
+function getTestKeys(schemaTestData) {
+	var keys = [];
 
-// string set test
-assert( settings.get('clock-format'), '24h');
-settings.set('clock-format', '12h');
-assert( settings.get('clock-format'), '12h');
-settings.set('clock-format', '24h');
-assert( settings.get('clock-format'), '24h');
+	schemaTestData.forEach(function( data ){
+		keys.push( data.key );
+	});
 
-// getAll test
-// read Uint32
-var settingsData = settings.getAll();
+	return keys;
+}
 
-// serialize test
-var settingsJSON = settings.serialize();
+function assertHasSameItems( a1, a2 ) {
+	assert(a1.length, a2.length);
 
-// read array of string tuple
-var settingsData2 = new GSettings('org.gnome.desktop.input-sources').getAll();
+	a1.forEach(function(key){
+		assert.notEqual(a2.indexOf(key), -1, "Missing key '" + key + "'" );
+	});
+}
 
-// read string array
-var settings2 = new GSettings('org.gnome.desktop.search-providers');
-settings2.getAll();
+function runAllTests() {
+	for ( var schemaId in testData ) {
+		var schemaTestData = testData[schemaId];
 
-// string array write test
-var originalSortOrder = settings2.get('sort-order');
-console.log('ORIGINAL sort-order', originalSortOrder);
+		runTest(schemaId, schemaTestData );
+	}
 
-settings2.set('sort-order', originalSortOrder.reverse());
-var reversedSortOrder = settings2.get('sort-order');
-console.log('REVERSE sort-order:', reversedSortOrder);
-// assert(originalSortOrder.reverse(), reversedSortOrder);
+	console.log( "TESTS DONE!" );
+}
 
-settings2.set('sort-order', reversedSortOrder.reverse());
-var restoredSortOrder = settings2.get('sort-order');
-console.log('RESTORED sort-order:', restoredSortOrder);
-// assert.deepEqual(originalSortOrder, restoredSortOrder);
+function runTest( schemaId, schemaTestData ) {
 
-// var settingsData2 = new GSettings('org.gnome.Totem').getAll();
+	var settings = new GSettings( schemaId );
 
-// test key list
-assert( Object.keys(settingsData2).length, settings.getKeyList().length);
+	// test schema id
+	assert( settings.schemaId, schemaId);
 
-console.log( "TESTS DONE!" );
+	// test if tests for all keys are implemented
+	// and if key list returned is correct
+	assertHasSameItems( settings.getKeyList(), getTestKeys(schemaTestData) );
+
+	schemaTestData.forEach(function( data ) {
+		if ( data.skipTest ) {
+			console.warn('WARN: Skipping test for \'' + data.key + '\'')
+			return true;
+		}
+
+		console.log('Testing key \'' + data.key + '\'');
+
+		// READ default test
+		console.log('    READ default value');
+		var defaultValue = data.originalValue;
+		console.log( '        Expected Value: ', defaultValue );
+		var actualValue   = settings.get(data.key);
+
+		console.log( '        Actual Value  : ', actualValue );
+		assert.deepEqual( defaultValue, actualValue, "Maybe schema was not reset?" );
+
+		// WRITE test
+		console.log('    WRITE test values');
+		data.testValues.forEach(function( testValue ){
+			console.log('        Test Value   : ', testValue);
+
+			settings.set( data.key, testValue );
+			var appliedValue = settings.get( data.key );
+			console.log('        Applied Value: ', appliedValue);
+			assert.deepEqual( appliedValue, testValue );
+		});
+
+		// RESTORE default
+		console.log('    RESTORE default value');
+		console.log('        Default Value: ', defaultValue);
+
+		settings.set( data.key, defaultValue );
+		var appliedValue = settings.get( data.key );
+		console.log('        Applied Value: ', appliedValue);
+		assert.deepEqual( defaultValue, appliedValue );
+
+		console.log('    Pass tests for key \'' + data.key + '\'');
+	});
+
+	console.log( "All tests pass for schema '"+ schemaId +"'" );
+}
+
+runAllTests();
