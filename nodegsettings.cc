@@ -164,10 +164,15 @@ Handle<Value> set_gsetting(const Arguments& args) {
 		}
 	}
 	else if (args[2]->IsString()) {
-		char val[1024];
 		variant = g_settings_get_value(settings,key);
 		type = g_variant_get_type(variant);
-		args[2]->ToString()->WriteUtf8(val);
+		Local<String> string_obj = args[2]->ToString();
+
+		int string_length = string_obj->Length();
+		char val[string_length+1];
+
+		string_obj->WriteUtf8(val);
+
 		status = g_settings_set_string(settings,key,val);
 	}
 	else if (args[2]->IsArray()) {
