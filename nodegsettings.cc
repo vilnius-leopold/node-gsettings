@@ -23,10 +23,8 @@
  * Copyright 2015 Leopold Burdyl
  */
 
-// #include <stdio.h>
 #include <node.h>
 #include <v8.h>
-
 #include <gio/gio.h>
 
 using namespace v8;
@@ -34,6 +32,17 @@ using namespace v8;
 // in globals
 const GVariantType* X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY = g_variant_type_new("a(ss)");
 
+
+/* Helper function - because we do this A LOT */
+char * v8_value_to_utf8_string(const Local<Value> value_obj) {
+	Local<String>  string_obj                = value_obj->ToString();
+	int            utf8_string_length        = string_obj->Utf8Length();
+	char          *utf8_string               = (char*) g_malloc(utf8_string_length + 1);
+
+	string_obj->WriteUtf8(utf8_string);
+
+	return utf8_string;
+}
 
 /* Takes schemaId string */
 Handle<Value> get_gsetting_keys(const Arguments& args) {
@@ -43,11 +52,7 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 	gint i;
 	gint size = 0;
 
-	// write schema string to variable
-	Local<String> schema_string_obj = args[0]->ToString();
-	int schema_string_length = schema_string_obj->Utf8Length();
-	char *schema = (char*) g_malloc(schema_string_length + 1);
-	schema_string_obj->WriteUtf8(schema);
+	char *schema = v8_value_to_utf8_string(args[0]);
 
 	settings = g_settings_new(schema);
 	keys = g_settings_list_keys(settings);
@@ -60,17 +65,6 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 		togo->Set(i,String::New(keys[i]));
 	}
 	return scope.Close(togo);
-}
-
-/* Helper function - because we do this A LOT */
-char * v8_value_to_utf8_string(const Local<Value> value_obj) {
-	Local<String>  string_obj                = value_obj->ToString();
-	int            utf8_string_length        = string_obj->Utf8Length();
-	char          *utf8_string               = (char*) g_malloc(utf8_string_length + 1);
-
-	string_obj->WriteUtf8(utf8_string);
-
-	return utf8_string;
 }
 
 /* Takes schemaId and key */
@@ -251,7 +245,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 					g_variant_builder_add_value (&builder, string_variant);
 				}
 				else {
-					ThrowException(Exception::Error(String::New("Invalid Array format!")));
+					ThrowException(Exception::Error(String::New("Array item have to be strings!")));
 					return scope.Close(Undefined());
 				}
 			}
