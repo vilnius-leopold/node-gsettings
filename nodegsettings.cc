@@ -29,7 +29,7 @@
 
 using namespace v8;
 
-// in globals
+// globals
 const GVariantType* X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY = g_variant_type_new("a(ss)");
 
 
@@ -55,10 +55,9 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 	char *schema = v8_value_to_utf8_string(args[0]);
 
 	settings = g_settings_new(schema);
-	keys = g_settings_list_keys(settings);
-	for (i = 0; keys[i]; i++) {
-		size++; // Figure out how to do this in 1 loop
-	}
+	keys     = g_settings_list_keys(settings);
+	size     = sizeof(keys)/sizeof(keys[0]);
+
 	Handle<Array> togo;
 	togo = Array::New(size);
 	for (i = 0; keys[i]; i++) {
