@@ -26,11 +26,18 @@
 			"key": "integer-setting",
 			"originalValue": -15,
 			"testValues": [
+				2147483647,
+				-2147483648,
 				2312,
 				-3423
 			],
 			"failTestValues": [
-				0.12
+				"some sting",
+				null,
+				["an array", 12, "stuff"],
+				0.12,
+				99999999999999,
+				-9999999999999
 			]
 		},
 		{
@@ -64,13 +71,14 @@
 				"three"
 			],
 			"testValues": [
-				[
-					"adfasd",
-					"12dfs",
-					"xyz"
-				]
+				[ "adfasd", "12dfs", "xyz" ],
+				[ "", "" ],
+				[]
 			],
-			"failTestValues": []
+			"failTestValues": [
+				[ null, null ],
+				[ "sneeky", "number", "hiding", 123, "somewhere", "in", "between" ]
+			]
 		},
 		{
 			"key": "string-tuple-array-setting",

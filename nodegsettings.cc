@@ -252,6 +252,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 				}
 				else {
 					ThrowException(Exception::Error(String::New("Invalid Array format!")));
+					return scope.Close(Undefined());
 				}
 			}
 
