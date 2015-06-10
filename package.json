@@ -29,5 +29,8 @@
   "main": "index.js",
   "engines": {
     "node": ">=0.1.9"
+  },
+  "devDependencies": {
+    "truncate": "^1.0.4"
   }
 }

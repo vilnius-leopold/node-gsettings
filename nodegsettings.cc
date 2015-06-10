@@ -35,7 +35,7 @@ using namespace v8;
 const GVariantType* X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY = g_variant_type_new("a(ss)");
 
 
-
+/* Takes schemaId string */
 Handle<Value> get_gsetting_keys(const Arguments& args) {
 	HandleScope scope;
 	GSettings *settings;
@@ -62,32 +62,32 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 	return scope.Close(togo);
 }
 
-/* Should take schema and key */
-Handle<Value> get_gsetting(const Arguments& args) {
-	HandleScope scope;
-	GSettings *settings;
+/* Helper function - because we do this A LOT */
+char * v8_value_to_utf8_string(const Local<Value> value_obj) {
+	Local<String>  string_obj                = value_obj->ToString();
+	int            utf8_string_length        = string_obj->Utf8Length();
+	char          *utf8_string               = (char*) g_malloc(utf8_string_length + 1);
 
-	// write schema string to variable
-	Local<String> schema_string_obj = args[0]->ToString();
-	int schema_string_length = schema_string_obj->Utf8Length();
-	char *schema = (char*) g_malloc(schema_string_length + 1);
-	schema_string_obj->WriteUtf8(schema);
+	string_obj->WriteUtf8(utf8_string);
+
+	return utf8_string;
+}
+
+/* Takes schemaId and key */
+Handle<Value> get_gsetting(const Arguments& args) {
+	HandleScope         scope;
+	GSettings          *settings;
+	GVariant           *variant;
+	const GVariantType *type;
+	const char         *schema;
+	const char         *key;
+
+	schema   = v8_value_to_utf8_string(args[0]);
+	key      = v8_value_to_utf8_string(args[1]);
 
 	settings = g_settings_new(schema);
-
-	// write schema string to variable
-	Local<String> key_string_obj = args[1]->ToString();
-	int key_string_length = key_string_obj->Utf8Length();
-	char *key = (char*) g_malloc(key_string_length + 1);
-	key_string_obj->WriteUtf8(key);
-
-	GVariant* variant;
-	const GVariantType* type;
-
-	variant = g_settings_get_value(settings,key);
-	type = g_variant_get_type(variant);
-
-	setbuf(stdout, NULL);
+	variant  = g_settings_get_value(settings,key);
+	type     = g_variant_get_type(variant);
 
 	if (g_variant_type_equal(type,G_VARIANT_TYPE_DOUBLE)) {
 		return scope.Close(Number::New(g_variant_get_double(variant)));
@@ -144,25 +144,21 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	}
 }
 
+/* Takes schemaId string */
 Handle<Value> schema_exists(const Arguments& args) {
-	HandleScope scope;
-
-	// write schema_id string to variable
-	Local<String> schema_id_string_obj = args[0]->ToString();
-	int schema_id_string_length = schema_id_string_obj->Utf8Length();
-	char *schema_id = (char*) g_malloc(schema_id_string_length + 1);
-	schema_id_string_obj->WriteUtf8(schema_id);
-
-	GSettingsSchemaSource * schema_source = g_settings_schema_source_get_default ();
+	HandleScope            scope;
+	char                  *schema_id     = v8_value_to_utf8_string(args[0]);
+	GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
 
 	if ( ! schema_source ) {
 		ThrowException(Exception::Error(String::New("No schema sources available!")));
 		return scope.Close(Undefined());
 	}
 
-	GSettingsSchema * schema = g_settings_schema_source_lookup (schema_source,
-	                                 schema_id,
-	                                 FALSE);
+	GSettingsSchema * schema =
+		g_settings_schema_source_lookup (schema_source,
+		                                 schema_id,
+		                                 FALSE);
 
 	if ( ! schema ) {
 		return scope.Close(Boolean::New(FALSE));
@@ -171,79 +167,77 @@ Handle<Value> schema_exists(const Arguments& args) {
 	return scope.Close(Boolean::New(TRUE));
 }
 
-/* Should take schema, key, and value */
+/* Takes schemaId, key, and value */
 Handle<Value> set_gsetting(const Arguments& args) {
-	HandleScope scope;
-	GSettings *settings;
-	GVariant* variant;
-	const GVariantType* type;
-	bool success = false;
+	HandleScope         scope;
+	Local<Value>        value_obj = args[2];
+	GSettings          *settings;
+	GVariant           *variant;
+	const GVariantType *type;
+	bool                success = false;
+	const char         *schema;
+	const char         *key;
 
-	// write schema string to variable
-	Local<String> schema_string_obj = args[0]->ToString();
-	int schema_string_length = schema_string_obj->Utf8Length();
-	char *schema = (char*) g_malloc(schema_string_length + 1);
-	schema_string_obj->WriteUtf8(schema);
+	schema   = v8_value_to_utf8_string(args[0]);
+	key      = v8_value_to_utf8_string(args[1]);
 
 	settings = g_settings_new(schema);
+	variant  = g_settings_get_value(settings,key);
+	type     = g_variant_get_type(variant);
 
-	// write schema string to variable
-	Local<String> key_string_obj = args[1]->ToString();
-	int key_string_length = key_string_obj->Utf8Length();
-	char *key = (char*) g_malloc(key_string_length + 1);
-	key_string_obj->WriteUtf8(key);
-
-	// args[1]->ToString()->WriteUtf8(key);
-
-	if (args[2]->IsBoolean()) {
-		success = g_settings_set_boolean(settings,key,args[2]->BooleanValue());
-	}
-	else if (args[2]->IsNumber()) {
-		variant = g_settings_get_value(settings,key);
-		type = g_variant_get_type(variant);
-		if (g_variant_type_equal(type,G_VARIANT_TYPE_DOUBLE)) {
-			success = g_settings_set_double(settings,key,args[2]->ToNumber()->Value());
-		}
-		else if (g_variant_type_equal(type,G_VARIANT_TYPE_INT32)) {
-			success = g_settings_set_int(settings,key,args[2]->ToInt32()->Value());
-		}
-		else if (g_variant_type_equal(type,G_VARIANT_TYPE_UINT32)) {
-			success = g_settings_set_uint(settings,key,args[2]->ToUint32()->Value());
-		}
-		else {
-			g_print("The type is %s\n", g_variant_type_peek_string(type));
-			ThrowException(Exception::Error(String::New("We haven't implemented this number type yet!")));
+	if ( g_variant_type_equal(type,G_VARIANT_TYPE_BOOLEAN) ) {
+		if ( value_obj->IsBoolean() ) {
+			success = g_settings_set_boolean(settings,key,value_obj->BooleanValue());
+		} else {
+			ThrowException(Exception::Error(String::New("Key requires boolean value!")));
+			return scope.Close(Undefined());
 		}
 	}
-	else if (args[2]->IsString()) {
-		variant = g_settings_get_value(settings,key);
-		type = g_variant_get_type(variant);
+	else if ( g_variant_type_equal(type,G_VARIANT_TYPE_STRING) ) {
+		if ( value_obj->IsString() ) {
+			char *val = v8_value_to_utf8_string(value_obj);
 
-		// write string value to variable
-		Local<String> string_obj = args[2]->ToString();
-		int string_length = string_obj->Utf8Length();
-		char *val = (char *) g_malloc(string_length+1);
-		string_obj->WriteUtf8(val);
-
-		success = g_settings_set_string(settings,key,val);
+			success = g_settings_set_string(settings,key,val);
+		} else {
+			ThrowException(Exception::Error(String::New("Key requires string value!")));
+			return scope.Close(Undefined());
+		}
 	}
-	else if (args[2]->IsArray()) {
-		variant = g_settings_get_value(settings,key);
+	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_DOUBLE) ) {
+		if ( value_obj->IsNumber() ) {
+			success = g_settings_set_double(settings,key,value_obj->ToNumber()->Value());
+		} else {
+			ThrowException(Exception::Error(String::New("Key requires a number!")));
+			return scope.Close(Undefined());
+		}
+	}
+	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_INT32) ) {
+		if ( value_obj->IsInt32() || value_obj->IsUint32() ) {
+			success = g_settings_set_int(settings,key,value_obj->ToInt32()->Value());
+		} else {
+			ThrowException(Exception::Error(String::New("Key requires a integer number!")));
+			return scope.Close(Undefined());
+		}
+	}
+	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_UINT32) ) {
+		if ( value_obj->IsUint32() ) {
+			success = g_settings_set_uint(settings,key,value_obj->ToUint32()->Value());
+		} else {
+			ThrowException(Exception::Error(String::New("Key requires a unsigned integer number!")));
+			return scope.Close(Undefined());
+		}
+	}
+	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_STRING_ARRAY) ) {
+		if ( value_obj->IsArray() ) {
+			GVariantBuilder  builder;
+			GVariant        *string_array_varient;
+			uint             i;
+			uint             length;
+			Local<Object>    obj = value_obj->ToObject();
 
-		type = g_variant_get_type(variant);
+			// get the array length
+			length = obj->Get(String::New("length"))->ToObject()->Uint32Value();
 
-		Local<Object> obj = args[2]->ToObject();
-
-		// get the array length
-		int length = obj->Get(String::New("length"))->ToObject()->Uint32Value();
-
-		if ( g_variant_type_equal(type, G_VARIANT_TYPE_STRING_ARRAY) ) {
-			// now that we know that gsetting requires an array of strings
-			// we have to check if the v8 object we received actually
-			// only contains string
-
-			int i;
-			GVariantBuilder builder;
 			g_variant_builder_init (&builder, G_VARIANT_TYPE_STRING_ARRAY);
 
 			for(i = 0; i < length; i++)
@@ -251,12 +245,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 				Local<Value> element = obj->Get(i);
 
 				if ( element->IsString() ) {
-					// write string value to variable
-					Local<String> string_obj = element->ToString();
-					const int string_length = string_obj->Utf8Length();
-					gchar *val = (gchar *) g_malloc(string_length+1);
-					string_obj->WriteUtf8(val);
-
+					char *val                = v8_value_to_utf8_string(element);
 					GVariant *string_variant = g_variant_new_string ((const gchar *) val);
 
 					g_variant_builder_add_value (&builder, string_variant);
@@ -266,15 +255,12 @@ Handle<Value> set_gsetting(const Arguments& args) {
 				}
 			}
 
-			GVariant * string_array_varient = g_variant_builder_end (&builder);
+			string_array_varient = g_variant_builder_end (&builder);
 
 			success = g_settings_set_value(settings, key, string_array_varient);
-		}
-		// else if ( g_variant_type_equal(type, X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY) ) {
-
-		// }
-		else {
-			ThrowException(Exception::Error(String::New("We haven't implemented this array type yet!")));
+		} else {
+			ThrowException(Exception::Error(String::New("Key requires an array of strings!")));
+			return scope.Close(Undefined());
 		}
 	}
 	else {
@@ -290,9 +276,8 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	return scope.Close(Undefined());
 }
 
+/* in addon initialization function */
 void init(Handle<Object> target) {
-	// in addon initialization function
-
 	target->Set(String::NewSymbol("set_gsetting"),
 	            FunctionTemplate::New(set_gsetting)->GetFunction());
 	target->Set(String::NewSymbol("get_gsetting"),

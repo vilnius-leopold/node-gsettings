@@ -1,8 +1,23 @@
 var assert    = require('assert'),
+    truncate  = require('truncate'),
     GSettings = require("./../index.js");
+
+
 
 // Load test data
 var testData = JSON.parse( require('fs').readFileSync( 'tests/testData.json', 'utf8') );
+
+function truncateLog() {
+	var messages = [],
+	    argLength = arguments.length;
+
+	for (var i = 0; i < argLength; i++ ) {
+		messages.push( arguments[i] );
+	}
+
+	console.log.apply(console,  [truncate(messages.join(" "), 75)] );
+}
+
 
 function getTestData( settings ) {
 	var obj = {};
@@ -83,7 +98,7 @@ function testInstanceFunctions( settings ) {
 			return true;
 		}
 
-		console.log("Testing function '" + data.name + "'");
+		truncateLog("Testing function '" + data.name + "'");
 
 		if ( data.expectedResult ) {
 			var func = settings[data.name];
@@ -125,7 +140,7 @@ function runAllTests() {
 		runTest(schemaId, schemaTestData );
 	}
 
-	console.log( "TESTS DONE!" );
+	truncateLog( "TESTS DONE!" );
 }
 
 function runTest( schemaId, schemaTestData ) {
@@ -137,7 +152,7 @@ function runTest( schemaId, schemaTestData ) {
 
 	// must throw error on
 	// non-existing schema
-	console.log('Testing fake schema error handing');
+	truncateLog('Testing fake schema error handing');
 	assert.throws(function() {
 		new GSettings( schemaId + '.fake-schema' );
 	});
@@ -176,59 +191,70 @@ function runTest( schemaId, schemaTestData ) {
 			return true;
 		}
 
-		console.log('Testing key \'' + data.key + '\'');
+		truncateLog('Testing key \'' + data.key + '\'');
 
 		// READ default test
-		console.log('    READ default value');
+		truncateLog('    READ default value');
 		var defaultValue = data.originalValue;
-		console.log( '        Expected Value: ', defaultValue );
+		truncateLog( '        Expected Value: ', defaultValue );
 		var actualValue   = settings.get(data.key);
 
-		console.log( '        Actual Value  : ', actualValue );
+		truncateLog( '        Actual Value  : ', actualValue );
 		assert.deepEqual( defaultValue, actualValue, "Maybe schema was not reset?" );
 
 		// WRITE test
-		console.log('    WRITE test values');
+		truncateLog('    WRITE test values');
 		data.testValues.forEach(function( testValue ){
-			console.log('        Test Value   : ', testValue);
+			truncateLog('        Test Value   : ', testValue);
 
 			settings.set( data.key, testValue );
 			var appliedValue = settings.get( data.key );
-			console.log('        Applied Value: ', appliedValue);
+			truncateLog('        Applied Value: ', appliedValue);
 			assert.deepEqual( appliedValue, testValue );
 		});
 
 		// FAIL tests
-		// if (data.failTestValues) {
-		// 	console.log('    FAIL test values');
-		// 	data.failTestValues.forEach(function( testValue ){
-		// 		console.log('        Fail Value   : ', testValue);
+		if (data.failTestValues) {
+			truncateLog('    FAIL test values');
+			data.failTestValues.forEach(function( testValue ){
 
-		// 		assert.throws(function(){
-		// 			settings.set( data.key, testValue );
-		// 		var appliedValue = settings.get( data.key );
-		// 		console.log('        Applied Value: ', appliedValue);
-		// 		});
+				var initialValue = settings.get( data.key );
+				truncateLog('        Initial Value     : ', initialValue);
 
-		// 		assert.deepEqual( appliedValue, testValue );
-		// 	});
-		// } else {
-		// 	console.warn('WARN: Missing fail tests');
-		// }
+				truncateLog('        Fail Value        : ', testValue);
+
+				assert.throws(function() {
+					settings.set( data.key, testValue );
+				}, function(err) {
+					truncateLog('        Fail error message: ' + err);
+
+					if ( err instanceof Error ) {
+						return true;
+					}
+				});
+
+				var postFailValue = settings.get( data.key );
+				truncateLog('        Post Fail Value   : ', postFailValue);
+				// truncateLog('        Applied Value: ', appliedValue);
+				assert.deepEqual( initialValue, postFailValue );
+			});
+		} else {
+			console.warn('WARN: Missing fail tests');
+		}
 
 		// RESTORE default
-		console.log('    RESTORE default value');
-		console.log('        Default Value: ', defaultValue);
+		truncateLog('    RESTORE default value');
+		truncateLog('        Default Value: ', defaultValue);
 
 		settings.set( data.key, defaultValue );
 		var appliedValue = settings.get( data.key );
-		console.log('        Applied Value: ', appliedValue);
+		truncateLog('        Applied Value: ', appliedValue);
 		assert.deepEqual( defaultValue, appliedValue );
 
-		console.log('    Pass tests for key \'' + data.key + '\'');
+		truncateLog('    Pass tests for key \'' + data.key + '\'');
 	});
 
-	console.log( "All tests pass for schema '"+ schemaId +"'" );
+	truncateLog( "All tests pass for schema '"+ schemaId +"'" );
 }
 
 runAllTests();
