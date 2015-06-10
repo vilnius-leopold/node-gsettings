@@ -21,7 +21,9 @@
     "settings",
     "config",
     "gnome",
-    "desktop"
+    "desktop",
+    "linux",
+    "gnu"
   ],
   "repository": "https://github.com/vilnius-leopold/node-gsettings.git",
   "main": "index.js",

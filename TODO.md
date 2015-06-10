@@ -1,8 +1,18 @@
 ToDo
 ====
+- return value or throw exception for `set_gsetting` ?
+- function validation
+- dconf range/bound checking
+	- very strange behaviour
+	- still sets a value but not the righ one
 - setup tests
 	- test all API calls
+	- implement better error handling
+		- ensure that (meaningful) errors are throughn
+		- ISSUE some Glib critical error don't through
+		- ISSUE some faulty input can cause a crash that does not through an error
 	- test API calls for wrong/faulty input
+	- test write non-writable value
 	- test data types read and write
 		- i
 		- u
