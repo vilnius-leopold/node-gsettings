@@ -51,6 +51,9 @@ var keyList = settings.getKeyList();
 settings.set('clock-format', '12h');
 ```
 
+## Contributers
+- [Antranig Basman](https://github.com/amb26)
+- [Leopold Burdyl](https://github.com/vilnius-leopold)
 
 ## License
 [BSD-3-Clause](LICENSE.txt)
