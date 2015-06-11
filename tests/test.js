@@ -18,6 +18,13 @@ function truncateLog() {
 	console.log.apply(console,  [truncate(messages.join(" "), 75)] );
 }
 
+function logAssertThrows(err) {
+	truncateLog('        Fail error message: ' + err);
+
+	if ( err instanceof Error ) {
+		return true;
+	}
+}
 
 function getTestData( settings ) {
 	var obj = {};
@@ -155,15 +162,15 @@ function runTest( schemaId, schemaTestData ) {
 	truncateLog('Testing fake schema error handing');
 	assert.throws(function() {
 		new GSettings( schemaId + '.fake-schema' );
-	});
+	}, logAssertThrows);
 
 	assert.throws(function() {
 		new GSettings( '?random!/format.strange84string' );
-	});
+	}, logAssertThrows);
 
 	assert.throws(function() {
 		new GSettings( 345234 );
-	});
+	}, logAssertThrows);
 
 
 	// test instance properties
@@ -176,14 +183,17 @@ function runTest( schemaId, schemaTestData ) {
 	// on non existing key
 	assert.throws(function() {
 		settings.get('INvalid?key-format!');
-	});
-	// assert.throws(function() {
-	// 	settings.get('fake-key');
-	// });
+	}, logAssertThrows);
 
-	// assert.throws(function() {
-	// 	settings.set('fake-key', 'fake-value');
-	// });
+	truncateLog('Testing get fake-key ');
+	assert.throws(function() {
+		settings.get('fake-key');
+	}, logAssertThrows);
+
+	truncateLog('Testing set fake-key ');
+	assert.throws(function() {
+		settings.set('fake-key', 'fake-value');
+	}, logAssertThrows);
 
 	schemaTestData.forEach(function( data ) {
 		if ( data.skipTest ) {
@@ -225,13 +235,7 @@ function runTest( schemaId, schemaTestData ) {
 
 				assert.throws(function() {
 					settings.set( data.key, testValue );
-				}, function(err) {
-					truncateLog('        Fail error message: ' + err);
-
-					if ( err instanceof Error ) {
-						return true;
-					}
-				});
+				}, logAssertThrows);
 
 				var postFailValue = settings.get( data.key );
 				truncateLog('        Post Fail Value   : ', postFailValue);

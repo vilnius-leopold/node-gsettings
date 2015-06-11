@@ -78,6 +78,29 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	schema   = v8_value_to_utf8_string(args[0]);
 	key      = v8_value_to_utf8_string(args[1]);
 
+	// validate key and schema
+	GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
+	if ( ! schema_source ) {
+		ThrowException(Exception::Error(String::New("No schema source available!")));
+		return scope.Close(Undefined());
+	}
+	GSettingsSchema * gsettings_schema =
+		g_settings_schema_source_lookup (schema_source,
+		                                 schema,
+		                                 FALSE);
+	if ( ! schema_source ) {
+		printf("Schema '%s' is not installed!\n", schema);
+		ThrowException(Exception::Error(String::New("Schema is not installed!")));
+		return scope.Close(Undefined());
+	}
+	gboolean has_key = g_settings_schema_has_key (gsettings_schema, key);
+	if ( ! has_key ) {
+		printf("Key '%s' does not exist!\n", key);
+		ThrowException(Exception::Error(String::New("Key does not exist!")));
+		return scope.Close(Undefined());
+	}
+
+	// create varient
 	settings = g_settings_new(schema);
 	variant  = g_settings_get_value(settings,key);
 	type     = g_variant_get_type(variant);
@@ -89,7 +112,26 @@ Handle<Value> get_gsetting(const Arguments& args) {
 		return scope.Close(Int32::New(g_variant_get_int32(variant)));
 	}
 	else if (g_variant_type_equal(type,G_VARIANT_TYPE_UINT32)) {
-		return scope.Close(Uint32::New(g_variant_get_uint32(variant)));
+
+		const guint gunit32_value = g_variant_get_uint32(variant);
+
+		/*
+			IMPORTANT:
+			Using 'Unit32::New(gunit32_value)''
+			will wrong results on some architectures
+			as the uint max limit can be different.
+			As I understand it, v8 will try to cast
+			the guint value to the achitecture specific
+			uint value. If the max uint value is lower
+			than the one of guint, the value can be corrupted
+			and can (as I experienced it) be set to -1
+			To keep v8 from casting the guint
+			value to a achitecutre dependent lower
+			limited unit
+			we use the more general 'Number' class
+			that supports long values.
+		*/
+		return scope.Close(Number::New(gunit32_value));
 	}
 	else if (g_variant_type_equal(type,G_VARIANT_TYPE_STRING)) {
 		return scope.Close(String::New(g_variant_get_string(variant,NULL)));
@@ -168,15 +210,41 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	GVariant           *variant;
 	const GVariantType *type;
 	bool                success = false;
-	const char         *schema;
+	const char         *schemaId;
 	const char         *key;
 
-	schema   = v8_value_to_utf8_string(args[0]);
+	schemaId = v8_value_to_utf8_string(args[0]);
 	key      = v8_value_to_utf8_string(args[1]);
 
-	settings = g_settings_new(schema);
+	// validate key and schema
+	GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
+	if ( ! schema_source ) {
+		ThrowException(Exception::Error(String::New("No schema source available!")));
+		return scope.Close(Undefined());
+	}
+	GSettingsSchema * gsettings_schema =
+		g_settings_schema_source_lookup (schema_source,
+		                                 schemaId,
+		                                 FALSE);
+	if ( ! schema_source ) {
+		printf("Schema '%s' is not installed!\n", schemaId);
+		ThrowException(Exception::Error(String::New("Schema is not installed!")));
+		return scope.Close(Undefined());
+	}
+	gboolean has_key = g_settings_schema_has_key (gsettings_schema, key);
+	if ( ! has_key ) {
+		printf("Key '%s' does not exist!\n", key);
+		ThrowException(Exception::Error(String::New("Key does not exist!")));
+		return scope.Close(Undefined());
+	}
+	GSettingsSchemaKey * gsettings_key =
+		g_settings_schema_get_key (gsettings_schema, key);
+
+	// get required variant type
+	settings = g_settings_new(schemaId);
 	variant  = g_settings_get_value(settings,key);
 	type     = g_variant_get_type(variant);
+
 
 	if ( g_variant_type_equal(type,G_VARIANT_TYPE_BOOLEAN) ) {
 		if ( value_obj->IsBoolean() ) {
@@ -198,15 +266,35 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	}
 	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_DOUBLE) ) {
 		if ( value_obj->IsNumber() ) {
-			success = g_settings_set_double(settings,key,value_obj->ToNumber()->Value());
+			gdouble v8_double_value = value_obj->ToNumber()->Value();
+			GVariant *variant_to_set = g_variant_new_double(v8_double_value);
+
+			gboolean is_valid = g_settings_schema_key_range_check (gsettings_key, variant_to_set);
+			if ( ! is_valid ) {
+				printf("Invalid range or type of '%s'\n", key);
+				ThrowException(Exception::Error(String::New("Key does not exist!")));
+				return scope.Close(Undefined());
+			}
+
+			success = g_settings_set_value(settings, key, variant_to_set);
 		} else {
 			ThrowException(Exception::Error(String::New("Key requires a number!")));
 			return scope.Close(Undefined());
 		}
 	}
 	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_INT32) ) {
-		if ( value_obj->IsInt32() || value_obj->IsUint32() ) {
-			success = g_settings_set_int(settings,key,value_obj->ToInt32()->Value());
+		if ( value_obj->IsInt32() ) {
+			GVariant *variant_to_set = g_variant_new_int32 (value_obj->ToInt32()->Value());
+
+			gboolean is_valid = g_settings_schema_key_range_check (gsettings_key, variant_to_set);
+
+			if ( ! is_valid ) {
+				printf("Invalid range or type of '%s'\n", key);
+				ThrowException(Exception::Error(String::New("Key does not exist!")));
+				return scope.Close(Undefined());
+			}
+
+			success = g_settings_set_value(settings, key, variant_to_set);
 		} else {
 			ThrowException(Exception::Error(String::New("Key requires a integer number!")));
 			return scope.Close(Undefined());
@@ -214,7 +302,9 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	}
 	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_UINT32) ) {
 		if ( value_obj->IsUint32() ) {
-			success = g_settings_set_uint(settings,key,value_obj->ToUint32()->Value());
+			const guint v8_uint32_value = value_obj->ToUint32()->Value();
+
+			success = g_settings_set_uint(settings, key, v8_uint32_value);
 		} else {
 			ThrowException(Exception::Error(String::New("Key requires a unsigned integer number!")));
 			return scope.Close(Undefined());
@@ -272,6 +362,8 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 /* in addon initialization function */
 void init(Handle<Object> target) {
+	setvbuf(stdout, NULL, _IONBF, 0);
+
 	target->Set(String::NewSymbol("set_gsetting"),
 	            FunctionTemplate::New(set_gsetting)->GetFunction());
 	target->Set(String::NewSymbol("get_gsetting"),
