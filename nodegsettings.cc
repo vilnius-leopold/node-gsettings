@@ -272,7 +272,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 			gboolean is_valid = g_settings_schema_key_range_check (gsettings_key, variant_to_set);
 			if ( ! is_valid ) {
 				printf("Invalid range or type of '%s'\n", key);
-				ThrowException(Exception::Error(String::New("Key does not exist!")));
+				ThrowException(Exception::Error(String::New("Invalid range or type!")));
 				return scope.Close(Undefined());
 			}
 
@@ -290,7 +290,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 			if ( ! is_valid ) {
 				printf("Invalid range or type of '%s'\n", key);
-				ThrowException(Exception::Error(String::New("Key does not exist!")));
+				ThrowException(Exception::Error(String::New("Invalid range or type!")));
 				return scope.Close(Undefined());
 			}
 
@@ -302,9 +302,17 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	}
 	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_UINT32) ) {
 		if ( value_obj->IsUint32() ) {
-			const guint v8_uint32_value = value_obj->ToUint32()->Value();
+			GVariant *variant_to_set = g_variant_new_uint32(value_obj->ToUint32()->Value());
 
-			success = g_settings_set_uint(settings, key, v8_uint32_value);
+			gboolean is_valid = g_settings_schema_key_range_check (gsettings_key, variant_to_set);
+
+			if ( ! is_valid ) {
+				printf("Invalid range or type of '%s'\n", key);
+				ThrowException(Exception::Error(String::New("Invalid range or type!")));
+				return scope.Close(Undefined());
+			}
+
+			success = g_settings_set_value(settings, key, variant_to_set);
 		} else {
 			ThrowException(Exception::Error(String::New("Key requires a unsigned integer number!")));
 			return scope.Close(Undefined());

@@ -45,6 +45,45 @@
 			]
 		},
 		{
+			"key": "integer-range-setting",
+			"originalValue": -2,
+			"testValues": [
+				0,
+				2,
+				10,
+				-10
+			],
+			"failTestValues": [
+				-11,
+				11
+			]
+		},
+		{
+			"key": "unsigned-integer-range-setting",
+			"originalValue": 10,
+			"testValues": [
+				5,
+				15
+			],
+			"failTestValues": [
+				4,
+				16
+			]
+		},
+		{
+			"key": "double-range-setting",
+			"originalValue": 0.0,
+			"testValues": [
+				5.05,
+				0.002,
+				-5.05
+			],
+			"failTestValues": [
+				5.05000001,
+				-5.05000001
+			]
+		},
+		{
 			"key": "double-setting",
 			"originalValue": 5,
 			"testValues": [

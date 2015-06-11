@@ -76,7 +76,10 @@ var instanceFunctionTests = [
 	},{
 		name: 'getKeyList',
 		testFunction: function(settings, funcName) {
-			assertHasSameItems( settings[funcName](), getTestKeys(settings) );
+			assertHasSameItems(
+				settings[funcName](),
+				getTestKeys(settings),
+				"Missing keys. Maybe forgot to install new schema xml?");
 		}
 
 	}
@@ -101,7 +104,7 @@ function testInstanceFunctions( settings ) {
 
 	instanceFunctionTests.forEach(function( data ) {
 		if ( data.skipTest ) {
-			console.warn('WARN: Skipping function test for \'' + data.name + "'")
+			console.warn('WARN: Skipping function test for \'' + data.name + "'");
 			return true;
 		}
 
