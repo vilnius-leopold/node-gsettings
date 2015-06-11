@@ -88,49 +88,14 @@
 		},
 		{
 			"key": "string-tuple-array-setting",
-			"originalValue": [
-				[
-					"one",
-					"two"
-				],
-				[
-					"three",
-					"four"
-				]
-			],
+			"originalValue": [[ "one", "two" ], [ "three", "four" ]],
 			"testValues": [
-				[
-					[
-						"x",
-						"y"
-					],
-					[
-						"abc",
-						"efg"
-					]
-				]
+				[[ "x", "y" ], [ "abc", "efg" ]]
 			],
 			"skipTest": true,
 			"failTestValues": [
-				[
-					[
-						"x"
-					],
-					[
-						"abc",
-						"efg"
-					]
-				],
-				[
-					[
-						1,
-						2
-					],
-					[
-						"abc",
-						"efg"
-					]
-				]
+				[["abc","efg"], ["x"], ["abc","efg"]],
+				[["abc","efg"], [1,2], ["abc","efg"]]
 			]
 		}
 	]
