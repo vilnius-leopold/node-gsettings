@@ -70,6 +70,7 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 	for (i = 0; keys[i]; i++) {
 		togo->Set(i,String::New(keys[i]));
 	}
+	g_strfreev(keys);
 	return scope.Close(togo);
 }
 
