@@ -89,6 +89,8 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
 	if ( ! schema_source ) {
 		ThrowException(Exception::Error(String::New("No schema source available!")));
+		g_free((void *) schema_id);
+		g_free((void *) key);
 		return scope.Close(Undefined());
 	}
 	GSettingsSchema * gsettings_schema =
@@ -98,12 +100,16 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	if ( ! schema_source ) {
 		printf("Schema '%s' is not installed!\n", schema_id);
 		ThrowException(Exception::Error(String::New("Schema is not installed!")));
+		g_free((void *) schema_id);
+		g_free((void *) key);
 		return scope.Close(Undefined());
 	}
 	gboolean has_key = g_settings_schema_has_key (gsettings_schema, key);
 	if ( ! has_key ) {
 		printf("Key '%s' does not exist!\n", key);
 		ThrowException(Exception::Error(String::New("Key does not exist!")));
+		g_free((void *) schema_id);
+		g_free((void *) key);
 		return scope.Close(Undefined());
 	}
 
@@ -111,6 +117,9 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	settings = g_settings_new(schema_id);
 	variant  = g_settings_get_value(settings,key);
 	type     = g_variant_get_type(variant);
+
+	g_free((void *) key);
+	g_free((void *) schema_id);
 
 	if (g_variant_type_equal(type,G_VARIANT_TYPE_DOUBLE)) {
 		return scope.Close(Number::New(g_variant_get_double(variant)));
