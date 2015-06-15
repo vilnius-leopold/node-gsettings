@@ -164,6 +164,8 @@ Handle<Value> get_gsetting(const Arguments& args) {
 			nodes->Set(i, String::New(elems[i]));
 		}
 
+		g_free(elems);
+
 		return scope.Close(nodes);
 	}
 	else if (g_variant_type_equal(type, X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY)) {
