@@ -1,7 +1,7 @@
 {
   "name": "node-gsettings",
   "description": "Node binding to gsettings dconf tool",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": "Leopold Burdyl",
   "scripts": {
     "test": "node tests/test.js"
