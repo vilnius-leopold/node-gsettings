@@ -32,7 +32,6 @@ using namespace v8;
 // globals
 const GVariantType* X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY = g_variant_type_new("a(ss)");
 
-
 /*
 Helper function - because we do this A LOT
 The returned char needs to be freed after usage.
@@ -49,12 +48,12 @@ char * v8_value_to_utf8_string(const Local<Value> value_obj) {
 }
 
 /* Takes schema_id string */
-Handle<Value> get_gsetting_keys(const Arguments& args) {
-	HandleScope scope;
+void get_gsetting_keys(const FunctionCallbackInfo<Value>& args) {
 	GSettings *settings;
 	gchar ** keys;
 	gint i;
 	gint size = 0;
+	Isolate *isolate = args.GetIsolate();
 
 	char *schema_id = v8_value_to_utf8_string(args[0]);
 
@@ -65,23 +64,23 @@ Handle<Value> get_gsetting_keys(const Arguments& args) {
 	keys     = g_settings_list_keys(settings);
 	size     = sizeof(keys)/sizeof(keys[0]);
 
-	Handle<Array> togo;
-	togo = Array::New(size);
+	Local<Array> togo;
+	togo = Array::New(isolate, size);
 	for (i = 0; keys[i]; i++) {
-		togo->Set(i,String::New(keys[i]));
+		togo->Set(i,String::NewFromOneByte(isolate, (const uint8_t*) keys[i]));
 	}
 	g_strfreev(keys);
-	return scope.Close(togo);
+	args.GetReturnValue().Set(togo);
 }
 
 /* Takes schema_id and key */
-Handle<Value> get_gsetting(const Arguments& args) {
-	HandleScope         scope;
+void get_gsetting(const FunctionCallbackInfo<Value>& args) {
 	GSettings          *settings;
 	GVariant           *variant;
 	const GVariantType *type;
 	const char         *schema_id;
 	const char         *key;
+	Isolate *isolate = args.GetIsolate();
 
 	schema_id = v8_value_to_utf8_string(args[0]);
 	key       = v8_value_to_utf8_string(args[1]);
@@ -89,29 +88,30 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	// validate key and schema
 	GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
 	if ( ! schema_source ) {
-		ThrowException(Exception::Error(String::New("No schema source available!")));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "No schema source available!")));
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		return scope.Close(Undefined());
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 	GSettingsSchema * gsettings_schema =
 		g_settings_schema_source_lookup (schema_source,
 		                                 schema_id,
 		                                 FALSE);
 	if ( ! schema_source ) {
-		printf("Schema '%s' is not installed!\n", schema_id);
-		ThrowException(Exception::Error(String::New("Schema is not installed!")));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Schema is not installed!")));
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		return scope.Close(Undefined());
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 	gboolean has_key = g_settings_schema_has_key (gsettings_schema, key);
 	if ( ! has_key ) {
-		printf("Key '%s' does not exist!\n", key);
-		ThrowException(Exception::Error(String::New("Key does not exist!")));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Key does not exist!")));
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		return scope.Close(Undefined());
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 
 	// create varient
@@ -123,10 +123,12 @@ Handle<Value> get_gsetting(const Arguments& args) {
 	g_free((void *) schema_id);
 
 	if (g_variant_type_equal(type,G_VARIANT_TYPE_DOUBLE)) {
-		return scope.Close(Number::New(g_variant_get_double(variant)));
+		args.GetReturnValue().Set(Number::New(isolate, g_variant_get_double(variant)));
+		return;
 	}
 	else if (g_variant_type_equal(type,G_VARIANT_TYPE_INT32)) {
-		return scope.Close(Int32::New(g_variant_get_int32(variant)));
+		args.GetReturnValue().Set(Int32::New(isolate, g_variant_get_int32(variant)));
+		return;
 	}
 	else if (g_variant_type_equal(type,G_VARIANT_TYPE_UINT32)) {
 
@@ -148,28 +150,30 @@ Handle<Value> get_gsetting(const Arguments& args) {
 			we use the more general 'Number' class
 			that supports long values.
 		*/
-		return scope.Close(Number::New(gunit32_value));
+		args.GetReturnValue().Set(Number::New(isolate, gunit32_value));
+		return;
 	}
 	else if (g_variant_type_equal(type,G_VARIANT_TYPE_STRING)) {
-		return scope.Close(String::New(g_variant_get_string(variant,NULL)));
+		args.GetReturnValue().Set(String::NewFromUtf8(isolate, g_variant_get_string(variant,NULL), String::NewStringType::kNormalString));
+		return;
 	}
 	else if (g_variant_type_equal(type,G_VARIANT_TYPE_STRING_ARRAY)) {
 		gsize length;
 		const gchar **elems = g_variant_get_strv(variant,&length);
 
-		HandleScope scope;
-		Local<Array> nodes = Array::New();
+		Local<Array> nodes = Array::New(isolate);
 
 		for (unsigned int i = 0; i < length; ++i) {
-			nodes->Set(i, String::New(elems[i]));
+			nodes->Set(i, String::NewFromUtf8(isolate, elems[i], String::NewStringType::kNormalString));
 		}
 
 		g_free(elems);
 
-		return scope.Close(nodes);
+		args.GetReturnValue().Set(nodes);
+		return;
 	}
 	else if (g_variant_type_equal(type, X_G_VARIANT_TYPE_STRING_TUPLE_ARRAY)) {
-		Local<Array> tuple_array = Array::New();
+		Local<Array> tuple_array = Array::New(isolate);
 
 		GVariantIter *iter;
 		gchar *str1;
@@ -178,36 +182,39 @@ Handle<Value> get_gsetting(const Arguments& args) {
 
 		g_variant_get (variant, "a(ss)", &iter);
 		while (g_variant_iter_loop (iter, "(ss)", &str1, &str2)) {
-			Local<Array> tuple = Array::New();
-			tuple->Set(0, String::New(str1));
-			tuple->Set(1, String::New(str2));
+			Local<Array> tuple = Array::New(isolate);
+			tuple->Set(0, String::NewFromUtf8(isolate, str1, String::NewStringType::kNormalString));
+			tuple->Set(1, String::NewFromUtf8(isolate, str2, String::NewStringType::kNormalString));
 			tuple_array->Set(i, tuple);
 			i++;
 		}
 		g_variant_iter_free (iter);
 
-		return scope.Close(tuple_array);
+		args.GetReturnValue().Set(tuple_array);
+		return;
 	}
 	else if (g_variant_type_equal(type,G_VARIANT_TYPE_BOOLEAN)) {
-		return scope.Close(Boolean::New(g_variant_get_boolean(variant)));
+		args.GetReturnValue().Set(Boolean::New(isolate, g_variant_get_boolean(variant)));
+		return;
 	}
 	else {
-		g_print("The type is %s\n", g_variant_type_peek_string(type));
-		ThrowException(Exception::Error(String::New("Need to implement reading that value type")));
-		return scope.Close(Undefined());
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*)  "Need to implement reading that value type")));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 }
 
 /* Takes schema_id string */
-Handle<Value> schema_exists(const Arguments& args) {
-	HandleScope            scope;
+void schema_exists(const FunctionCallbackInfo<Value>& args) {
 	char                  *schema_id     = v8_value_to_utf8_string(args[0]);
 	GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
+	Isolate *isolate = args.GetIsolate();
 
 	if ( ! schema_source ) {
 		g_free(schema_id);
-		ThrowException(Exception::Error(String::New("No schema sources available!")));
-		return scope.Close(Undefined());
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*)  "No schema sources available!")));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 
 	GSettingsSchema * schema =
@@ -218,15 +225,14 @@ Handle<Value> schema_exists(const Arguments& args) {
 	g_free(schema_id);
 
 	if ( ! schema ) {
-		return scope.Close(Boolean::New(FALSE));
+		args.GetReturnValue().Set(Boolean::New(isolate, false));
+	} else {
+		args.GetReturnValue().Set(Boolean::New(isolate, true));
 	}
-
-	return scope.Close(Boolean::New(TRUE));
 }
 
 /* Takes schema_id, key, and value */
-Handle<Value> set_gsetting(const Arguments& args) {
-	HandleScope         scope;
+void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	Local<Value>        value_obj = args[2];
 	GSettings          *settings;
 	GVariant           *variant;
@@ -237,6 +243,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	bool                validation_success = false;
 	const char         *schema_id;
 	const char         *key;
+	Isolate *isolate = args.GetIsolate();
 
 	schema_id = v8_value_to_utf8_string(args[0]);
 	key       = v8_value_to_utf8_string(args[1]);
@@ -246,27 +253,28 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	if ( ! schema_source ) {
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		ThrowException(Exception::Error(String::New("No schema source available!")));
-		return scope.Close(Undefined());
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "No schema source available!")));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 	GSettingsSchema * gsettings_schema =
 		g_settings_schema_source_lookup (schema_source,
 		                                 schema_id,
 		                                 FALSE);
 	if ( ! schema_source ) {
-		printf("Schema '%s' is not installed!\n", schema_id);
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		ThrowException(Exception::Error(String::New("Schema is not installed!")));
-		return scope.Close(Undefined());
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Schema is not installed!")));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 	gboolean has_key = g_settings_schema_has_key (gsettings_schema, key);
 	if ( ! has_key ) {
-		printf("Key '%s' does not exist!\n", key);
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		ThrowException(Exception::Error(String::New("Key does not exist!")));
-		return scope.Close(Undefined());
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Key does not exist!")));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 	GSettingsSchemaKey * gsettings_key =
 		g_settings_schema_get_key (gsettings_schema, key);
@@ -329,7 +337,7 @@ Handle<Value> set_gsetting(const Arguments& args) {
 			Local<Object>    obj = value_obj->ToObject();
 
 			// get the array length
-			length = obj->Get(String::New("length"))->ToObject()->Uint32Value();
+			length = obj->Get(String::NewFromOneByte(isolate, (const uint8_t*) "length"))->ToObject()->Uint32Value();
 
 			g_variant_builder_init (&builder, G_VARIANT_TYPE_STRING_ARRAY);
 
@@ -346,8 +354,9 @@ Handle<Value> set_gsetting(const Arguments& args) {
 				}
 				else {
 					g_free((void *) key);
-					ThrowException(Exception::Error(String::New("Array item have to be strings!")));
-					return scope.Close(Undefined());
+					isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Array item have to be strings!")));
+					args.GetReturnValue().SetUndefined();
+					return;
 				}
 			}
 
@@ -362,18 +371,19 @@ Handle<Value> set_gsetting(const Arguments& args) {
 
 	if ( ! validation_success ) {
 		g_free((void *) key);
-		ThrowException(Exception::Error(String::New(validation_fail_message)));
-		return scope.Close(Undefined());
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) validation_fail_message)));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 
 	// write variant
 	gboolean is_valid = g_settings_schema_key_range_check (gsettings_key, variant_to_set);
 
 	if ( ! is_valid ) {
-		printf("Invalid range or type of '%s'\n", key);
 		g_free((void *) key);
-		ThrowException(Exception::Error(String::New("Invalid range or type!")));
-		return scope.Close(Undefined());
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Invalid range or type!")));
+		args.GetReturnValue().SetUndefined();
+		return;
 	}
 
 	write_success = g_settings_set_value(settings, key, variant_to_set);
@@ -383,24 +393,25 @@ Handle<Value> set_gsetting(const Arguments& args) {
 	g_free((void *) key);
 
 	if ( ! write_success ) {
-		ThrowException(Exception::Error(String::New("Failed to set gsetting! Key is write protected.")));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Failed to set gsetting! Key is write protected.")));
 	}
 
-	return scope.Close(Undefined());
+	args.GetReturnValue().SetUndefined();
+	return;
 }
 
 /* in addon initialization function */
-void init(Handle<Object> target) {
-	setvbuf(stdout, NULL, _IONBF, 0);
+void init(Local<Object> target) {
+	Isolate *isolate = target->GetIsolate();
 
-	target->Set(String::NewSymbol("set_gsetting"),
-	            FunctionTemplate::New(set_gsetting)->GetFunction());
-	target->Set(String::NewSymbol("get_gsetting"),
-	            FunctionTemplate::New(get_gsetting)->GetFunction());
-	target->Set(String::NewSymbol("get_gsetting_keys"),
-	            FunctionTemplate::New(get_gsetting_keys)->GetFunction());
-	target->Set(String::NewSymbol("schema_exists"),
-	            FunctionTemplate::New(schema_exists)->GetFunction());
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "set_gsetting"),
+	            FunctionTemplate::New(isolate, set_gsetting)->GetFunction());
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "get_gsetting"),
+	            FunctionTemplate::New(isolate, get_gsetting)->GetFunction());
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "get_gsetting_keys"),
+	            FunctionTemplate::New(isolate, get_gsetting_keys)->GetFunction());
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "schema_exists"),
+	            FunctionTemplate::New(isolate, schema_exists)->GetFunction());
 }
 
 NODE_MODULE(nodegsettings, init)
