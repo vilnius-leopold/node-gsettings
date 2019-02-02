@@ -67,7 +67,7 @@ void get_gsetting_keys(const FunctionCallbackInfo<Value>& args) {
 	Local<Array> togo;
 	togo = Array::New(isolate, size);
 	for (i = 0; keys[i]; i++) {
-		togo->Set(i,String::NewFromOneByte(isolate, (const uint8_t*) keys[i]));
+		togo->Set(i, String::NewFromOneByte(isolate, (const uint8_t*) keys[i], NewStringType::kNormal).ToLocalChecked() );
 	}
 	g_strfreev(keys);
 	args.GetReturnValue().Set(togo);
@@ -88,7 +88,7 @@ void get_gsetting(const FunctionCallbackInfo<Value>& args) {
 	// validate key and schema
 	GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
 	if ( ! schema_source ) {
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "No schema source available!")));
+		isolate->ThrowException(Exception::Error( String::NewFromOneByte(isolate, (const uint8_t*) "No schema source available!", NewStringType::kNormal ).ToLocalChecked() ));
 		g_free((void *) schema_id);
 		g_free((void *) key);
 		args.GetReturnValue().SetUndefined();
@@ -99,7 +99,7 @@ void get_gsetting(const FunctionCallbackInfo<Value>& args) {
 		                                 schema_id,
 		                                 FALSE);
 	if ( ! schema_source ) {
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Schema is not installed!")));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Schema is not installed!", NewStringType::kNormal ).ToLocalChecked() ));
 		g_free((void *) schema_id);
 		g_free((void *) key);
 		args.GetReturnValue().SetUndefined();
@@ -107,7 +107,7 @@ void get_gsetting(const FunctionCallbackInfo<Value>& args) {
 	}
 	gboolean has_key = g_settings_schema_has_key (gsettings_schema, key);
 	if ( ! has_key ) {
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Key does not exist!")));
+		isolate->ThrowException(Exception::Error( String::NewFromOneByte(isolate, (const uint8_t*) "Key does not exist!", NewStringType::kNormal ).ToLocalChecked() ));
 		g_free((void *) schema_id);
 		g_free((void *) key);
 		args.GetReturnValue().SetUndefined();
@@ -198,7 +198,7 @@ void get_gsetting(const FunctionCallbackInfo<Value>& args) {
 		return;
 	}
 	else {
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*)  "Need to implement reading that value type")));
+		isolate->ThrowException(Exception::Error( String::NewFromOneByte(isolate, (const uint8_t*)  "Need to implement reading that value type", NewStringType::kNormal ).ToLocalChecked() ));
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
@@ -212,7 +212,7 @@ void schema_exists(const FunctionCallbackInfo<Value>& args) {
 
 	if ( ! schema_source ) {
 		g_free(schema_id);
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*)  "No schema sources available!")));
+		isolate->ThrowException(Exception::Error( String::NewFromOneByte(isolate, (const uint8_t*)  "No schema sources available!", NewStringType::kNormal ).ToLocalChecked() ));
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
@@ -253,7 +253,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	if ( ! schema_source ) {
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "No schema source available!")));
+		isolate->ThrowException(Exception::Error( String::NewFromOneByte(isolate, (const uint8_t*) "No schema source available!", NewStringType::kNormal).ToLocalChecked() ));
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
@@ -264,7 +264,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	if ( ! schema_source ) {
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Schema is not installed!")));
+		isolate->ThrowException(Exception::Error( String::NewFromOneByte(isolate, (const uint8_t*) "Schema is not installed!", NewStringType::kNormal).ToLocalChecked() ));
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
@@ -272,7 +272,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	if ( ! has_key ) {
 		g_free((void *) schema_id);
 		g_free((void *) key);
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Key does not exist!")));
+		isolate->ThrowException(Exception::Error( String::NewFromOneByte(isolate, (const uint8_t*) "Key does not exist!", NewStringType::kNormal).ToLocalChecked() ));
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
@@ -307,7 +307,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_DOUBLE) ) {
 		if ( value_obj->IsNumber() ) {
 			validation_success = true;
-			variant_to_set = g_variant_new_double(value_obj->ToNumber()->Value());
+			variant_to_set = g_variant_new_double(value_obj->ToNumber(isolate)->Value());
 		} else {
 			validation_fail_message = "Key requires a number!";
 		}
@@ -315,7 +315,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_INT32) ) {
 		if ( value_obj->IsInt32() ) {
 			validation_success = true;
-			variant_to_set = g_variant_new_int32 (value_obj->ToInt32()->Value());
+			variant_to_set = g_variant_new_int32 (value_obj->ToInt32(isolate)->Value());
 		} else {
 			validation_fail_message = "Key requires a integer number!";
 		}
@@ -323,7 +323,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	else if ( g_variant_type_equal(type, G_VARIANT_TYPE_UINT32) ) {
 		if ( value_obj->IsUint32() ) {
 			validation_success = true;
-			variant_to_set = g_variant_new_uint32(value_obj->ToUint32()->Value());
+			variant_to_set = g_variant_new_uint32( value_obj->ToUint32( isolate->GetCurrentContext() ).ToLocalChecked()->Value() );
 		} else {
 			validation_fail_message = "Key requires a unsigned integer number!";
 		}
@@ -337,7 +337,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 			Local<Object>    obj = value_obj->ToObject();
 
 			// get the array length
-			length = obj->Get(String::NewFromOneByte(isolate, (const uint8_t*) "length"))->ToObject()->Uint32Value();
+			length = obj->Get(String::NewFromOneByte(isolate, (const uint8_t*) "length", NewStringType::kNormal).ToLocalChecked())->ToObject()->Uint32Value();
 
 			g_variant_builder_init (&builder, G_VARIANT_TYPE_STRING_ARRAY);
 
@@ -354,7 +354,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 				}
 				else {
 					g_free((void *) key);
-					isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Array item have to be strings!")));
+					isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Array item have to be strings!", NewStringType::kNormal).ToLocalChecked()));
 					args.GetReturnValue().SetUndefined();
 					return;
 				}
@@ -371,7 +371,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 
 	if ( ! validation_success ) {
 		g_free((void *) key);
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) validation_fail_message)));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) validation_fail_message, NewStringType::kNormal).ToLocalChecked()));
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
@@ -381,7 +381,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 
 	if ( ! is_valid ) {
 		g_free((void *) key);
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Invalid range or type!")));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Invalid range or type!", NewStringType::kNormal).ToLocalChecked()));
 		args.GetReturnValue().SetUndefined();
 		return;
 	}
@@ -393,7 +393,7 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 	g_free((void *) key);
 
 	if ( ! write_success ) {
-		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Failed to set gsetting! Key is write protected.")));
+		isolate->ThrowException(Exception::Error(String::NewFromOneByte(isolate, (const uint8_t*) "Failed to set gsetting! Key is write protected.", NewStringType::kNormal).ToLocalChecked()));
 	}
 
 	args.GetReturnValue().SetUndefined();
@@ -404,13 +404,13 @@ void set_gsetting(const FunctionCallbackInfo<Value>& args) {
 void init(Local<Object> target) {
 	Isolate *isolate = target->GetIsolate();
 
-	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "set_gsetting"),
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "set_gsetting", NewStringType::kNormal).ToLocalChecked(),
 	            FunctionTemplate::New(isolate, set_gsetting)->GetFunction());
-	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "get_gsetting"),
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "get_gsetting", NewStringType::kNormal).ToLocalChecked(),
 	            FunctionTemplate::New(isolate, get_gsetting)->GetFunction());
-	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "get_gsetting_keys"),
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "get_gsetting_keys", NewStringType::kNormal).ToLocalChecked(),
 	            FunctionTemplate::New(isolate, get_gsetting_keys)->GetFunction());
-	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "schema_exists"),
+	target->Set(String::NewFromOneByte(isolate, (const uint8_t*) "schema_exists", NewStringType::kNormal).ToLocalChecked(),
 	            FunctionTemplate::New(isolate, schema_exists)->GetFunction());
 }
 
