@@ -1,7 +1,7 @@
 {
   "name": "node-gsettings",
   "description": "Node binding to gsettings dconf tool",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "author": "Leopold Burdyl",
   "scripts": {
     "test": "node tests/test.js"
@@ -28,9 +28,10 @@
   "repository": "https://github.com/vilnius-leopold/node-gsettings.git",
   "main": "index.js",
   "engines": {
-    "node": ">=0.1.9"
+    "node": ">=10.0"
   },
   "devDependencies": {
-    "truncate": "^1.0.4"
+    "truncate": "^1.0.4",
+    "eslint": "^5.13.0"
   }
 }
